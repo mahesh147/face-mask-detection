@@ -1,3 +1,5 @@
 .vscode
 *.jpg
 core/__pycache__
+weights/
+models/
