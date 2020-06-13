@@ -3,3 +3,5 @@
 core/__pycache__
 weights/
 models/
+*.mp4
+video/
