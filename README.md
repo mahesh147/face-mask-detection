@@ -1,168 +1,78 @@
-# tensorflow-yolov4-tflite
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](LICENSE)
+## face-mask-detection
 
-YOLOv4 Implemented in Tensorflow 2.0. 
-Convert YOLO v4, YOLOv3, YOLO tiny .weights to .pb, .tflite and trt format for tensorflow, tensorflow lite, tensorRT.
+------
 
-Download yolov4.weights file: https://drive.google.com/open?id=1cewMfusmPjYWbrnuJRuKhPMwRe_b9PaT
+### Important Note
 
+This is a forked repository from https://github.com/hunglc007/tensorflow-yolov4-tflite. While a majority of the code from between these two repository remains the same, there are a few notable changes. This repository does not contain training, evaluating, benchmarking and weight conversion functionalities from the parent repository. The goal was to create a customised version of just for real-time face mask detection using the trained darknet weights.
 
-### Prerequisites
-* Tensorflow 2.1.0
-* tensorflow_addons 0.9.1 (required for mish activation)
+The parent repository allowed for several general functionalities, most of which was unnecessary for our use case. As a result this repository will only be maintained with the sole intention of working with face mask detection problem.
 
-### Performance
-<p align="center"><img src="data/performance.png" width="640"\></p>
+To see the full list of changes, please read through the Changelog.
 
-### Demo
+------
 
-```bash
-# yolov4
-python detect.py --weights ./data/yolov4.weights --framework tf --size 608 --image ./data/kite.jpg
+### Introduction
 
-# yolov4 tflite
-python detect.py --weights ./data/yolov4-int8.tflite --framework tflite --size 416 --image ./data/kite.jpg
+The purpose of this project is develop a real-time face mask detection software that can be used in a wide variety of places such as, corporate offices, shopping malls, theatres and other places with dense crowds. To develop this application we have used [YOLOv4](https://arxiv.org/abs/2004.10934) a real-time object detection model. We used the publicly available [face mask detection](https://www.kaggle.com/alexandralorenzo/maskdetection) dataset from Kaggle and trained it using darknet's pre-trained yolov4 weights. We trained on an initial network resolution of 608x608. Higher resolution can lead to better detection.
+
+Each of the trained weights was converted to an .h5 model which was used for detection. 
+
+------
+
+### Useage
+
+First save the darknet weights into a corresponding .h5 model :
+
+``` python
+python save_model.py --weights <name_of_darknet_weights> --size 416  
 ```
 
-#### Output
+- `size` parameter is used to scale the image to get a padded image for the detection. Since the input_layer uses a `tf.keras.layers.Input` with the `size ` as the shape of this layer, each image / video frame sent to this model for detection will be scaled accordingly.
 
-##### Yolov4 original weight
-<p align="center"><img src="result.png" width="640"\></p>
+To run the detection on a single image :
 
-##### Yolov4 tflite int8
-<p align="center"><img src="result-int8.png" width="640"\></p>
-
-### Convert to tflite
-
-```bash
-# yolov4
-python convert_tflite.py --weights ./data/yolov4.weights --output ./data/yolov4.tflite
-
-# yolov4 quantize float16
-python convert_tflite.py --weights ./data/yolov4.weights --output ./data/yolov4-fp16.tflite --quantize_mode float16
-
-# yolov4 quantize int8
-python convert_tflite.py --weights ./data/yolov4.weights --output ./data/yolov4-fp16.tflite --quantize_mode full_int8 --dataset ./coco_dataset/coco/val207.txt
-```
-### Convert to TensorRT
-```bash
-# yolov3
-python save_model.py --weights ./data/yolov3.weights --output ./checkpoints/yolov3.tf --input_size 416 --model yolov3
-python convert_trt.py --weights ./checkpoints/yolov3.tf --quantize_mode float16 --output ./checkpoints/yolov3-trt-fp16-416
-
-# yolov3-tiny
-python save_model.py --weights ./data/yolov3-tiny.weights --output ./checkpoints/yolov3-tiny.tf --input_size 416 --tiny
-python convert_trt.py --weights ./checkpoints/yolov3-tiny.tf --quantize_mode float16 --output ./checkpoints/yolov3-tiny-trt-fp16-416
-
-# yolov4
-python save_model.py --weights ./data/yolov4.weights --output ./checkpoints/yolov4.tf --input_size 416 --model yolov4
-python convert_trt.py --weights ./checkpoints/yolov4.tf --quantize_mode float16 --output ./checkpoints/yolov4-trt-fp16-416
+``` python
+python image.py --model <path_to_the_model> --image_path <path_to_image>
 ```
 
-### Evaluate on COCO 2017 Dataset
-```bash
-# run script in /script/get_coco_dataset_2017.sh to download COCO 2017 Dataset
-# preprocess coco dataset
-cd data
-mkdir dataset
-cd ..
-cd scripts
-python coco_convert.py --input ./coco/annotations/instances_val2017.json --output val2017.pkl
-python coco_annotation.py --coco_path ./coco 
-cd ..
+Detection on video and to save the results to a separate file :
 
-# evaluate yolov4 model
-python evaluate.py --weights ./data/yolov4.weights
-cd mAP/extra
-python remove_space.py
-cd ..
-python main.py --output results_yolov4_tf
+``` python
+python video.py --model <path_to_the_model> --video_path <path_to_the_video> --save_path <detected_video_save_path>
 ```
-#### mAP50 on COCO 2017 Dataset
 
-| Detection   | 512x512 | 416x416 | 320x320 |
-|-------------|---------|---------|---------|
-| YoloV3      | 55.43   | 52.32   |         |
-| YoloV4      | 61.96   | 57.33   |         |
+Detection using a webcam : 
 
-### Benchmark
-```bash
-python benchmarks.py --size 416 --model yolov4 --weights ./data/yolov4.weights
+``` python
+python webcam.py --model <path_to_the_model> 
 ```
-#### TensorRT performance
- 
-| YoloV4 416 images/s |   FP32   |   FP16   |   INT8   |
-|---------------------|----------|----------|----------|
-| Batch size 1        | 55       | 116      |          |
-| Batch size 8        | 70       | 152      |          |
-
-#### Tesla P100
-
-| Detection   | 512x512 | 416x416 | 320x320 |
-|-------------|---------|---------|---------|
-| YoloV3 FPS  | 40.6    | 49.4    | 61.3    |
-| YoloV4 FPS  | 33.4    | 41.7    | 50.0    |
-
-#### Tesla K80
-
-| Detection   | 512x512 | 416x416 | 320x320 |
-|-------------|---------|---------|---------|
-| YoloV3 FPS  | 10.8    | 12.9    | 17.6    |
-| YoloV4 FPS  | 9.6     | 11.7    | 16.0    |
-
-#### Tesla T4
-
-| Detection   | 512x512 | 416x416 | 320x320 |
-|-------------|---------|---------|---------|
-| YoloV3 FPS  | 27.6    | 32.3    | 45.1    |
-| YoloV4 FPS  | 24.0    | 30.3    | 40.1    |
-
-#### Tesla P4
-
-| Detection   | 512x512 | 416x416 | 320x320 |
-|-------------|---------|---------|---------|
-| YoloV3 FPS  | 20.2    | 24.2    | 31.2    |
-| YoloV4 FPS  | 16.2    | 20.2    | 26.5    |
-
-#### Macbook Pro 15 (2.3GHz i7)
-
-| Detection   | 512x512 | 416x416 | 320x320 |
-|-------------|---------|---------|---------|
-| YoloV3 FPS  |         |         |         |
-| YoloV4 FPS  |         |         |         |
-
-### Traning your own model
-```bash
-# Prepare your dataset
-# If you want to train from scratch:
-In config.py set FISRT_STAGE_EPOCHS=0 
-# Run script:
-python train.py
-
-# Transfer learning: 
-python train.py --weights ./data/yolov4.weights
-```
-The training performance is not fully reproduced yet, so I recommended to use Alex's [Darknet](https://github.com/AlexeyAB/darknet) to train your own data, then convert the .weights to tensorflow or tflite.
 
 
 
-### TODO
-* [x] Convert YOLOv4 to TensorRT
-* [x] YOLOv4 tflite on android
-* [ ] YOLOv4 tflite on ios
-* [x] Training code
-* [x] Update scale xy
-* [ ] ciou
-* [ ] Mosaic data augmentation
-* [x] Mish activation
-* [x] yolov4 tflite version
-* [x] yolov4 in8 tflite version for mobile
 
-### References
 
-  * YOLOv4: Optimal Speed and Accuracy of Object Detection [YOLOv4](https://arxiv.org/abs/2004.10934).
-  * [darknet](https://github.com/AlexeyAB/darknet)
-  
-   My project is inspired by these previous fantastic YOLOv3 implementations:
-  * [Yolov3 tensorflow](https://github.com/YunYang1994/tensorflow-yolov3)
-  * [Yolov3 tf2](https://github.com/zzh8829/yolov3-tf2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
