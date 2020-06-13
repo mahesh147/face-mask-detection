@@ -6,58 +6,17 @@ import tensorflow as tf
 import core.utils as utils
 import core.common as common
 import core.backbone as backbone
-from core.config import cfg
+#from core.config import cfg
 
-# NUM_CLASS       = len(utils.read_class_names(cfg.YOLO.CLASSES))
-# STRIDES         = np.array(cfg.YOLO.STRIDES)
-# IOU_LOSS_THRESH = cfg.YOLO.IOU_LOSS_THRESH
-# XYSCALE = cfg.YOLO.XYSCALE
-# ANCHORS = utils.get_anchors(cfg.YOLO.ANCHORS)
-
-def YOLOv3(input_layer, NUM_CLASS):
-    route_1, route_2, conv = backbone.darknet53(input_layer)
-
-    conv = common.convolutional(conv, (1, 1, 1024, 512))
-    conv = common.convolutional(conv, (3, 3, 512, 1024))
-    conv = common.convolutional(conv, (1, 1, 1024, 512))
-    conv = common.convolutional(conv, (3, 3, 512, 1024))
-    conv = common.convolutional(conv, (1, 1, 1024, 512))
-
-    conv_lobj_branch = common.convolutional(conv, (3, 3, 512, 1024))
-    conv_lbbox = common.convolutional(conv_lobj_branch, (1, 1, 1024, 3 * (NUM_CLASS + 5)), activate=False, bn=False)
-
-    conv = common.convolutional(conv, (1, 1, 512, 256))
-    conv = common.upsample(conv)
-
-    conv = tf.concat([conv, route_2], axis=-1)
-
-    conv = common.convolutional(conv, (1, 1, 768, 256))
-    conv = common.convolutional(conv, (3, 3, 256, 512))
-    conv = common.convolutional(conv, (1, 1, 512, 256))
-    conv = common.convolutional(conv, (3, 3, 256, 512))
-    conv = common.convolutional(conv, (1, 1, 512, 256))
-
-    conv_mobj_branch = common.convolutional(conv, (3, 3, 256, 512))
-    conv_mbbox = common.convolutional(conv_mobj_branch, (1, 1, 512, 3 * (NUM_CLASS + 5)), activate=False, bn=False)
-
-    conv = common.convolutional(conv, (1, 1, 256, 128))
-    conv = common.upsample(conv)
-
-    conv = tf.concat([conv, route_1], axis=-1)
-
-    conv = common.convolutional(conv, (1, 1, 384, 128))
-    conv = common.convolutional(conv, (3, 3, 128, 256))
-    conv = common.convolutional(conv, (1, 1, 256, 128))
-    conv = common.convolutional(conv, (3, 3, 128, 256))
-    conv = common.convolutional(conv, (1, 1, 256, 128))
-
-    conv_sobj_branch = common.convolutional(conv, (3, 3, 128, 256))
-    conv_sbbox = common.convolutional(conv_sobj_branch, (1, 1, 256, 3 * (NUM_CLASS + 5)), activate=False, bn=False)
-
-    return [conv_sbbox, conv_mbbox, conv_lbbox]
+cfg = None
 
 def YOLOv4(input_layer, NUM_CLASS):
+
+    print('[INFO][core.yolov4.YOLOv4] Initializing YOLOv4 architecture')
+
     route_1, route_2, conv = backbone.cspdarknet53(input_layer)
+
+    print('[INFO][core.yolov4.YOLOv4] cspdarknet53 backbone initialized')
 
     route = conv
     conv = common.convolutional(conv, (1, 1, 512, 256))
@@ -87,6 +46,8 @@ def YOLOv4(input_layer, NUM_CLASS):
     conv = common.convolutional(conv, (3, 3, 128, 256))
     conv_sbbox = common.convolutional(conv, (1, 1, 256, 3 * (NUM_CLASS + 5)), activate=False, bn=False)
 
+    print(f'[DEBUG][core.yolov4.YOLOv4] conv_ssbox : {conv_sbbox}')
+
     conv = common.convolutional(route_1, (3, 3, 128, 256), downsample=True)
     conv = tf.concat([conv, route_2], axis=-1)
 
@@ -100,6 +61,8 @@ def YOLOv4(input_layer, NUM_CLASS):
     conv = common.convolutional(conv, (3, 3, 256, 512))
     conv_mbbox = common.convolutional(conv, (1, 1, 512, 3 * (NUM_CLASS + 5)), activate=False, bn=False)
 
+    print(f'[DEBUG][core.yolov4.YOLOv4] conv_mbbox : {conv_mbbox}')
+
     conv = common.convolutional(route_2, (3, 3, 256, 512), downsample=True)
     conv = tf.concat([conv, route], axis=-1)
 
@@ -112,30 +75,18 @@ def YOLOv4(input_layer, NUM_CLASS):
     conv = common.convolutional(conv, (3, 3, 512, 1024))
     conv_lbbox = common.convolutional(conv, (1, 1, 1024, 3 * (NUM_CLASS + 5)), activate=False, bn=False)
 
+    print(f'[DEBUG][core.yolov4.YOLOv4] conv_lbbox : {conv_lbbox}')
+    print(f'[INFO][core.yolov4.YOLOv4] YOLOv4 architecture initialized')
     return [conv_sbbox, conv_mbbox, conv_lbbox]
 
-def YOLOv3_tiny(input_layer, NUM_CLASS):
-    route_1, conv = backbone.darknet53_tiny(input_layer)
-
-    conv = common.convolutional(conv, (1, 1, 1024, 256))
-
-    conv_lobj_branch = common.convolutional(conv, (3, 3, 256, 512))
-    conv_lbbox = common.convolutional(conv_lobj_branch, (1, 1, 512, 3 * (NUM_CLASS + 5)), activate=False, bn=False)
-
-    conv = common.convolutional(conv, (1, 1, 256, 128))
-    conv = common.upsample(conv)
-    conv = tf.concat([conv, route_1], axis=-1)
-
-    conv_mobj_branch = common.convolutional(conv, (3, 3, 128, 256))
-    conv_mbbox = common.convolutional(conv_mobj_branch, (1, 1, 256, 3 * (NUM_CLASS + 5)), activate=False, bn=False)
-
-    return [conv_mbbox, conv_lbbox]
 
 def decode(conv_output, NUM_CLASS, i=0):
     """
     return tensor of shape [batch_size, output_size, output_size, anchor_per_scale, 5 + num_classes]
             contains (x, y, w, h, score, probability)
     """
+    print(f'[DEBUG][core.yolov4.decode] Decoding tensor : {conv_output}')
+
     conv_shape       = tf.shape(conv_output)
     batch_size       = conv_shape[0]
     output_size      = conv_shape[1]
@@ -146,33 +97,9 @@ def decode(conv_output, NUM_CLASS, i=0):
     pred_conf = tf.sigmoid(conv_raw_conf)
     pred_prob = tf.sigmoid(conv_raw_prob)
 
+    print(f'[DEBUG][core.yolov4.decode] Finished decoding tensor : {conv_output}')
+
     return tf.concat([conv_raw_xywh, pred_conf, pred_prob], axis=-1)
-
-def decode_train(conv_output, NUM_CLASS, STRIDES, ANCHORS, i=0, XYSCALE=[1,1,1]):
-    conv_shape = tf.shape(conv_output)
-    batch_size = conv_shape[0]
-    output_size = conv_shape[1]
-
-    conv_output = tf.reshape(conv_output, (batch_size, output_size, output_size, 3, 5 + NUM_CLASS))
-    conv_raw_dxdy, conv_raw_dwdh, conv_raw_conf, conv_raw_prob = tf.split(conv_output, (2, 2, 1, NUM_CLASS), axis=-1)
-
-    x = tf.tile(tf.expand_dims(tf.range(output_size, dtype=tf.int32), axis=0), [output_size, 1])
-    y = tf.tile(tf.expand_dims(tf.range(output_size, dtype=tf.int32), axis=1), [1, output_size])
-    xy_grid = tf.expand_dims(tf.stack([x, y], axis=-1), axis=2)  # [gx, gy, 1, 2]
-    # xy_grid = np.meshgrid(np.arange(output_size), np.arange(output_size))
-    # xy_grid = np.expand_dims(np.stack(xy_grid, axis=-1), axis=2)  # [gx, gy, 1, 2]
-
-    xy_grid = tf.tile(tf.expand_dims(xy_grid, axis=0), [batch_size, 1, 1, 3, 1])
-    xy_grid = tf.cast(xy_grid, tf.float32)
-
-    pred_xy = ((tf.sigmoid(conv_raw_dxdy) * XYSCALE[i]) - 0.5 * (XYSCALE[i] - 1) + xy_grid) * STRIDES[i]
-    pred_wh = (tf.exp(conv_raw_dwdh) * ANCHORS[i])
-    pred_xywh = tf.concat([pred_xy, pred_wh], axis=-1)
-
-    pred_conf = tf.sigmoid(conv_raw_conf)
-    pred_prob = tf.sigmoid(conv_raw_prob)
-
-    return tf.concat([pred_xywh, pred_conf, pred_prob], axis=-1)
 
 def bbox_iou(boxes1, boxes2):
 

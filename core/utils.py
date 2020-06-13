@@ -3,87 +3,17 @@ import random
 import colorsys
 import numpy as np
 import tensorflow as tf
-from core.config import cfg
+import time
+#from core.config import cfg
 
-def load_weights_tiny(model, weights_file):
-    wf = open(weights_file, 'rb')
-    major, minor, revision, seen, _ = np.fromfile(wf, dtype=np.int32, count=5)
 
-    j = 0
-    for i in range(13):
-        conv_layer_name = 'conv2d_%d' % i if i > 0 else 'conv2d'
-        bn_layer_name = 'batch_normalization_%d' % j if j > 0 else 'batch_normalization'
-
-        conv_layer = model.get_layer(conv_layer_name)
-        filters = conv_layer.filters
-        k_size = conv_layer.kernel_size[0]
-        in_dim = conv_layer.input_shape[-1]
-
-        if i not in [9, 12]:
-            # darknet weights: [beta, gamma, mean, variance]
-            bn_weights = np.fromfile(wf, dtype=np.float32, count=4 * filters)
-            # tf weights: [gamma, beta, mean, variance]
-            bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]]
-            bn_layer = model.get_layer(bn_layer_name)
-            j += 1
-        else:
-            conv_bias = np.fromfile(wf, dtype=np.float32, count=filters)
-
-        # darknet shape (out_dim, in_dim, height, width)
-        conv_shape = (filters, in_dim, k_size, k_size)
-        conv_weights = np.fromfile(wf, dtype=np.float32, count=np.product(conv_shape))
-        # tf shape (height, width, in_dim, out_dim)
-        conv_weights = conv_weights.reshape(conv_shape).transpose([2, 3, 1, 0])
-
-        if i not in [9, 12]:
-            conv_layer.set_weights([conv_weights])
-            bn_layer.set_weights(bn_weights)
-        else:
-            conv_layer.set_weights([conv_weights, conv_bias])
-
-    assert len(wf.read()) == 0, 'failed to read all data'
-    wf.close()
-
-def load_weights_v3(model, weights_file):
-    wf = open(weights_file, 'rb')
-    major, minor, revision, seen, _ = np.fromfile(wf, dtype=np.int32, count=5)
-
-    j = 0
-    for i in range(75):
-        conv_layer_name = 'conv2d_%d' % i if i > 0 else 'conv2d'
-        bn_layer_name = 'batch_normalization_%d' % j if j > 0 else 'batch_normalization'
-
-        conv_layer = model.get_layer(conv_layer_name)
-        filters = conv_layer.filters
-        k_size = conv_layer.kernel_size[0]
-        in_dim = conv_layer.input_shape[-1]
-
-        if i not in [58, 66, 74]:
-            # darknet weights: [beta, gamma, mean, variance]
-            bn_weights = np.fromfile(wf, dtype=np.float32, count=4 * filters)
-            # tf weights: [gamma, beta, mean, variance]
-            bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]]
-            bn_layer = model.get_layer(bn_layer_name)
-            j += 1
-        else:
-            conv_bias = np.fromfile(wf, dtype=np.float32, count=filters)
-
-        # darknet shape (out_dim, in_dim, height, width)
-        conv_shape = (filters, in_dim, k_size, k_size)
-        conv_weights = np.fromfile(wf, dtype=np.float32, count=np.product(conv_shape))
-        # tf shape (height, width, in_dim, out_dim)
-        conv_weights = conv_weights.reshape(conv_shape).transpose([2, 3, 1, 0])
-
-        if i not in [58, 66, 74]:
-            conv_layer.set_weights([conv_weights])
-            bn_layer.set_weights(bn_weights)
-        else:
-            conv_layer.set_weights([conv_weights, conv_bias])
-
-    assert len(wf.read()) == 0, 'failed to read all data'
-    wf.close()
 
 def load_weights(model, weights_file):
+
+    print('[INFO][core.utils.load_weights] Loading darknet weights')
+    
+    tic = time.perf_counter()
+
     wf = open(weights_file, 'rb')
     major, minor, revision, seen, _ = np.fromfile(wf, dtype=np.int32, count=5)
 
@@ -119,12 +49,15 @@ def load_weights(model, weights_file):
         else:
             conv_layer.set_weights([conv_weights, conv_bias])
 
+    toc = time.perf_counter()
+    print('[INFO][core.utils.load_weights] Weights loaded.')
+    print(f'[DEBUG][core.utils.load_weights] Execution took {toc - tic:0.4f} seconds')
     assert len(wf.read()) == 0, 'failed to read all data'
     wf.close()
 
-
+'''
 def read_class_names(class_file_name):
-    '''loads class name from a file'''
+    
     names = {}
     with open(class_file_name, 'r') as data:
         for ID, name in enumerate(data):
@@ -133,7 +66,7 @@ def read_class_names(class_file_name):
 
 
 def get_anchors(anchors_path, tiny=False):
-    '''loads the anchors from a file'''
+    
     with open(anchors_path) as f:
         anchors = f.readline()
     anchors = np.array(anchors.split(','), dtype=np.float32)
@@ -142,13 +75,16 @@ def get_anchors(anchors_path, tiny=False):
     else:
         return anchors.reshape(3, 3, 2)
 
-
-def image_preprocess(image, target_size, gt_boxes=None):
+'''
+def image_preprocess(image, target_size):
 
     ih, iw    = target_size
     h,  w, _  = image.shape
-
+    #print(ih/h, iw/w, h, w, _)
     scale = min(iw/w, ih/h)
+
+    print(f'[DEBUG][core.utils.image_preprocess] scale : {scale}')
+
     nw, nh  = int(scale * w), int(scale * h)
     image_resized = cv2.resize(image, (nw, nh))
 
@@ -157,33 +93,31 @@ def image_preprocess(image, target_size, gt_boxes=None):
     image_paded[dh:nh+dh, dw:nw+dw, :] = image_resized
     image_paded = image_paded / 255.
 
-    if gt_boxes is None:
-        return image_paded
+    print(f'[INFO][core.utils.image_preprocess] Finished image padding ')
 
-    else:
-        gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * scale + dw
-        gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * scale + dh
-        return image_paded, gt_boxes
+    return image_paded
 
 
-def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_label=True):
+
+def draw_bbox(image, bboxes, classes=['Mask','No-Mask' ], show_label=True):
     """
     bboxes: [x_min, y_min, x_max, y_max, probability, cls_id] format coordinates.
     """
 
     num_classes = len(classes)
     image_h, image_w, _ = image.shape
-    hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
-    colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-    colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
+    #hsv_tuples = [(1.0 * x / num_classes, 1., 1.) for x in range(num_classes)]
+    #colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+    #colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
 
+    colors = [(0, 255, 0), (255, 0, 0)]
     random.seed(0)
     random.shuffle(colors)
     random.seed(None)
 
     for i, bbox in enumerate(bboxes):
         coor = np.array(bbox[:4], dtype=np.int32)
-        fontScale = 0.5
+        fontScale = 0.7
         score = bbox[4]
         class_ind = int(bbox[5])
         bbox_color = colors[class_ind]
@@ -198,6 +132,11 @@ def draw_bbox(image, bboxes, classes=read_class_names(cfg.YOLO.CLASSES), show_la
 
             cv2.putText(image, bbox_mess, (c1[0], c1[1]-2), cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale, (0, 0, 0), bbox_thick//2, lineType=cv2.LINE_AA)
+
+    
+    print(f'[DEBUG][core.utils.draw_bbox] There are {i + 1} people in this image.')
+    print(f'[DEBUG][core.utils.draw_bbox] score : {score}')
+    print(f'[DEBUG][core.utils.draw_bbox] class_ind : {class_ind}')
 
     return image
 
@@ -290,13 +229,16 @@ def nms(bboxes, iou_threshold, sigma=0.3, method='nms'):
             cls_bboxes[:, 4] = cls_bboxes[:, 4] * weight
             score_mask = cls_bboxes[:, 4] > 0.
             cls_bboxes = cls_bboxes[score_mask]
-
+    print('[INFO][core.utils.nms] Finished extracting the best boundary boxes')
     return best_bboxes
 
 def diounms_sort(bboxes, iou_threshold, sigma=0.3, method='nms', beta_nms=0.6):
     best_bboxes = []
     return best_bboxes
+
+
 def postprocess_bbbox(pred_bbox, ANCHORS, STRIDES, XYSCALE=[1,1,1]):
+
     for i, pred in enumerate(pred_bbox):
         conv_shape = pred.shape
         output_size = conv_shape[1]
@@ -316,7 +258,10 @@ def postprocess_bbbox(pred_bbox, ANCHORS, STRIDES, XYSCALE=[1,1,1]):
 
     pred_bbox = [tf.reshape(x, (-1, tf.shape(x)[-1])) for x in pred_bbox]
     pred_bbox = tf.concat(pred_bbox, axis=0)
+    print('[INFO][core.utils.postprocess_bbbox] Finished postprocessing of boundary boxes')
     return pred_bbox
+
+
 def postprocess_boxes(pred_bbox, org_img_shape, input_size, score_threshold):
 
     valid_scale=[0, np.inf]
@@ -356,6 +301,8 @@ def postprocess_boxes(pred_bbox, org_img_shape, input_size, score_threshold):
     score_mask = scores > score_threshold
     mask = np.logical_and(scale_mask, score_mask)
     coors, scores, classes = pred_coor[mask], scores[mask], classes[mask]
+
+    print('[INFO][core.utils.postprocess_boxes] Extracted coordinates, scores and class prediction.')
 
     return np.concatenate([coors, scores[:, np.newaxis], classes[:, np.newaxis]], axis=-1)
 
