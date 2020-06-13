@@ -26,3 +26,24 @@ All notable changes to this project will be documented in this file.
 
 - save_model.py to save each darknet weights to keras compatible .h5 weights 
 - Added [INFO] and [DEBUG] log messages
+
+
+
+### [0.1.0] - 13-06-2020
+
+### Removed
+
+-  Removed data/anchors directory
+- Removed miscellaneous function related to training and benchmarking
+- Removed evaluate.py
+
+### Added
+
+- Image detection
+- Video detection from source
+- Real-time webcam detection
+
+### Modified
+
+- Included Anchors and XYSsale from the config to each of the detection file
+- Updated README.md 
