@@ -114,7 +114,7 @@ def draw_bbox(image, bboxes, classes=['Mask','No-Mask' ], show_label=True):
     random.seed(0)
     random.shuffle(colors)
     random.seed(None)
-
+    i = score = class_ind = 0
     for i, bbox in enumerate(bboxes):
         coor = np.array(bbox[:4], dtype=np.int32)
         fontScale = 0.7
