@@ -5,7 +5,7 @@ import core.utils as utils
 from core.yolov4 import YOLOv4, YOLOv3, YOLOv3_tiny, decode
 from PIL import Image
 from core.config import cfg
-import cv2
+import cv2 
 import numpy as np
 import tensorflow as tf
 
