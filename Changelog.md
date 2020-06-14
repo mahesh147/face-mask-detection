@@ -47,3 +47,11 @@ All notable changes to this project will be documented in this file.
 
 - Included Anchors and XYSsale from the config to each of the detection file
 - Updated README.md 
+
+
+
+### [0.1.0] - 14-06-2020
+
+### Removed
+
+- Removed the original detect.py from the repo. This functionality is now done by image.py 
