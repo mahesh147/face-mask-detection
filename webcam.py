@@ -27,20 +27,20 @@ def main(argv):
     score_thresh = FLAGS.score_thresh
     iou_thresh = FLAGS.iou_thresh
 
-    print(f'[DEBUG][image] input_size : {input_size}')
-    print(f'[DEBUG][image] score_thresh : {score_thresh}')
-    print(f'[DEBUG][image] iou_thresh : {iou_thresh}')
+    print(f'[DEBUG][webcam] input_size : {input_size}')
+    print(f'[DEBUG][webcam] score_thresh : {score_thresh}')
+    print(f'[DEBUG][webcam] iou_thresh : {iou_thresh}')
 
     print('[INFO] Bulding Yolov4 architecture')
     tic = time.perf_counter()
 
     input_layer = tf.keras.layers.Input([input_size, input_size, 3])
-    print(f'[INFO][image] Created input_layer of size {input_size}')
-    print(f'[DEBUG][image] input_layer : {input_layer}')
+    print(f'[INFO][webcam] Created input_layer of size {input_size}')
+    print(f'[DEBUG][webcam] input_layer : {input_layer}')
 
     feature_maps = YOLOv4(input_layer, NUM_CLASS)
 
-    print(f'[DEBUG][image] feature_maps : {feature_maps}')
+    print(f'[DEBUG][webcam] feature_maps : {feature_maps}')
     bbox_tensors = []
     for i, fm in enumerate(feature_maps):
         bbox_tensors.append(decode(fm, NUM_CLASS, i))
@@ -50,7 +50,7 @@ def main(argv):
 
     toc = time.perf_counter()
     print(f'[INFO] Architecture built.')
-    print(f'[DEBUG][image] Execution took {toc - tic:0.4f} seconds')
+    print(f'[DEBUG][webcam] Execution took {toc - tic:0.4f} seconds')
 
     vid = cv2.VideoCapture(0)
 
@@ -70,7 +70,7 @@ def main(argv):
         prev_time = time.time()
 
         pred_bbox = model.predict(image_data)
-        print(f'[INFO][image] Finished initial predication on image')
+        print(f'[INFO][webcam] Finished initial predication on image')
 
         pred_bbox = utils.postprocess_bbbox(
             pred_bbox, ANCHORS, STRIDES, XYSCALE)
