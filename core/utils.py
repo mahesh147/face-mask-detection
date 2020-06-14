@@ -141,6 +141,60 @@ def draw_bbox(image, bboxes, classes=['Mask','No-Mask' ], show_label=True):
     return image
 
 
+
+def bboxes_iou(boxes1, boxes2):
+
+    boxes1 = np.array(boxes1)
+    boxes2 = np.array(boxes2)
+
+    boxes1_area = (boxes1[..., 2] - boxes1[..., 0]) * (boxes1[..., 3] - boxes1[..., 1])
+    boxes2_area = (boxes2[..., 2] - boxes2[..., 0]) * (boxes2[..., 3] - boxes2[..., 1])
+
+    left_up       = np.maximum(boxes1[..., :2], boxes2[..., :2])
+    right_down    = np.minimum(boxes1[..., 2:], boxes2[..., 2:])
+
+    inter_section = np.maximum(right_down - left_up, 0.0)
+    inter_area    = inter_section[..., 0] * inter_section[..., 1]
+    union_area    = boxes1_area + boxes2_area - inter_area
+    ious          = np.maximum(1.0 * inter_area / union_area, np.finfo(np.float32).eps)
+
+    return ious
+
+def bboxes_ciou(boxes1, boxes2):
+
+    boxes1 = np.array(boxes1)
+    boxes2 = np.array(boxes2)
+
+    left = np.maximum(boxes1[..., 0], boxes2[..., 0])
+    up = np.maximum(boxes1[..., 1], boxes2[..., 1])
+    right = np.maximum(boxes1[..., 2], boxes2[..., 2])
+    down = np.maximum(boxes1[..., 3], boxes2[..., 3])
+
+    c = (right - left) * (right - left) + (up - down) * (up - down)
+    iou = bboxes_iou(boxes1, boxes2)
+
+    ax = (boxes1[..., 0] + boxes1[..., 2]) / 2
+    ay = (boxes1[..., 1] + boxes1[..., 3]) / 2
+    bx = (boxes2[..., 0] + boxes2[..., 2]) / 2
+    by = (boxes2[..., 1] + boxes2[..., 3]) / 2
+
+    u = (ax - bx) * (ax - bx) + (ay - by) * (ay - by)
+    d = u/c
+
+    aw = boxes1[..., 2] - boxes1[..., 0]
+    ah = boxes1[..., 3] - boxes1[..., 1]
+    bw = boxes2[..., 2] - boxes2[..., 0]
+    bh = boxes2[..., 3] - boxes2[..., 1]
+
+    ar_gt = bw/bh
+    ar_pred = aw/ah
+
+    ar_loss = 4 / (np.pi * np.pi) * (np.arctan(ar_gt) - np.arctan(ar_pred)) * (np.arctan(ar_gt) - np.arctan(ar_pred))
+    alpha = ar_loss / (1 - iou + ar_loss + 0.000001)
+    ciou_term = d + alpha * ar_loss
+
+    return iou - ciou_term
+
 def nms(bboxes, iou_threshold, sigma=0.3, method='nms'):
     """
     :param bboxes: (xmin, ymin, xmax, ymax, score, class)
@@ -177,6 +231,11 @@ def nms(bboxes, iou_threshold, sigma=0.3, method='nms'):
             cls_bboxes = cls_bboxes[score_mask]
     print('[INFO][core.utils.nms] Finished extracting the best boundary boxes')
     return best_bboxes
+
+def diounms_sort(bboxes, iou_threshold, sigma=0.3, method='nms', beta_nms=0.6):
+    best_bboxes = []
+    return best_bboxes
+
 
 def postprocess_bbbox(pred_bbox, ANCHORS, STRIDES, XYSCALE=[1,1,1]):
 
@@ -246,3 +305,15 @@ def postprocess_boxes(pred_bbox, org_img_shape, input_size, score_threshold):
     print('[INFO][core.utils.postprocess_boxes] Extracted coordinates, scores and class prediction.')
 
     return np.concatenate([coors, scores[:, np.newaxis], classes[:, np.newaxis]], axis=-1)
+
+def freeze_all(model, frozen=True):
+    model.trainable = not frozen
+    if isinstance(model, tf.keras.Model):
+        for l in model.layers:
+            freeze_all(l, frozen)
+def unfreeze_all(model, frozen=False):
+    model.trainable = not frozen
+    if isinstance(model, tf.keras.Model):
+        for l in model.layers:
+            unfreeze_all(l, frozen)
+
