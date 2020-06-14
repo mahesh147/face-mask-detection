@@ -5,3 +5,4 @@ weights/
 models/
 *.mp4
 video/
+Pipfile
