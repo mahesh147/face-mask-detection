@@ -20,7 +20,7 @@ Each of the trained weights was converted to an .h5 model which was used for det
 
 ------
 
-### Useage
+### Usage
 
 First save the darknet weights into a corresponding .h5 model :
 
