@@ -55,3 +55,7 @@ All notable changes to this project will be documented in this file.
 ### Removed
 
 - Removed the original detect.py from the repo. This functionality is now done by image.py 
+
+### Modified
+
+- Reverted back to old implementation of building the model during detection time.

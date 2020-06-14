@@ -22,31 +22,25 @@ Each of the trained weights was converted to an .h5 model which was used for det
 
 ### Usage
 
-First save the darknet weights into a corresponding .h5 model :
-
-``` python
-python save_model.py --weights <name_of_darknet_weights> --size 416  
-```
-
-- `size` parameter is used to scale the image to get a padded image for the detection. Since the input_layer uses a `tf.keras.layers.Input` with the `size ` as the shape of this layer, each image / video frame sent to this model for detection will be scaled accordingly.
-
 To run the detection on a single image :
 
 ``` python
-python image.py --model <path_to_the_model> --image_path <path_to_image>
+python image.py --weights <path_to_the_weights> --size <size_to_scale> --image_path <path_to_image>
 ```
 
 Detection on video and to save the results to a separate file :
 
 ``` python
-python video.py --model <path_to_the_model> --video_path <path_to_the_video> --save_path <detected_video_save_path>
+python video.py --weights <path_to_the_weights> --video_path <path_to_the_video> --size <size_to_scale> --save_path <detected_video_save_path>
 ```
 
 Detection using a webcam : 
 
 ``` python
-python webcam.py --model <path_to_the_model> 
+python webcam.py --weights <path_to_the_weights> --size <size_to_scale> 
 ```
+
+`size` parameter is used to scale the image to get a padded image for the detection. Since the input_layer uses a `tf.keras.layers.Input` with the `size ` as the shape of this layer, each image / video frame sent to this model for detection will be scaled accordingly.
 
 
 
