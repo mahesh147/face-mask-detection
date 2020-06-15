@@ -78,9 +78,14 @@ def main(argv):
         image_data = image_data[np.newaxis, ...].astype(np.float32)
         prev_time = time.perf_counter()
 
-        pred_bbox = model.predict(image_data)
-        print(f'[INFO][webcam] Finished initial predication on image')
+        tic = time.perf_counter()
 
+        pred_bbox = model.predict(image_data)
+
+        toc = time.perf_counter()
+
+        print(f'[INFO][webcam] Finished initial predication on image')
+        print(f'[DEBUG][webcam] Predication took {(1000 * (toc - tic)):0.4f} ms')
         pred_bbox = utils.postprocess_bbbox(
             pred_bbox, ANCHORS, STRIDES, XYSCALE)
 
