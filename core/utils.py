@@ -51,7 +51,7 @@ def load_weights(model, weights_file):
 
     toc = time.perf_counter()
     print('[INFO][core.utils.load_weights] Weights loaded.')
-    print(f'[DEBUG][core.utils.load_weights] Execution took {toc - tic:0.4f} seconds')
+    print(f'[DEBUG][core.utils.load_weights] Execution took {(1000 * (toc - tic)):0.4f} ms')
     assert len(wf.read()) == 0, 'failed to read all data'
     wf.close()
 

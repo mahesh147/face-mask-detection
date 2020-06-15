@@ -104,7 +104,7 @@ def main(argv):
         curr_time = time.perf_counter() 
         exec_time = curr_time - prev_time
         result = np.asarray(image)
-        info = "time: %.2f ms" % (1000*exec_time)
+        info = "fdpms: %.2f ms" % (1000*exec_time)
 
         print(info)
 

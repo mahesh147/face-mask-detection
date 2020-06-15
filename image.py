@@ -65,7 +65,7 @@ def main(argv):
 
     toc = time.perf_counter()
     print(f'[INFO] Architecture built.')
-    print(f'[DEBUG][image] Execution took {toc - tic:0.4f} seconds')
+    print(f'[DEBUG][image] Execution took {(1000 * (toc - tic)):0.4f} ms')
 
     pred_bbox = model.predict(image_data)
 
