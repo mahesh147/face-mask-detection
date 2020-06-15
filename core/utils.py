@@ -111,6 +111,8 @@ def draw_bbox(image, bboxes, classes=['Mask','No-Mask' ], show_label=True):
     #colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
 
     colors = [(0, 255, 0), (255, 0, 0)]
+    mask_counter = 0
+    nomask_counter = 0
     random.seed(0)
     random.shuffle(colors)
     random.seed(None)
@@ -132,12 +134,19 @@ def draw_bbox(image, bboxes, classes=['Mask','No-Mask' ], show_label=True):
 
             cv2.putText(image, bbox_mess, (c1[0], c1[1]-2), cv2.FONT_HERSHEY_SIMPLEX,
                         fontScale, (0, 0, 0), bbox_thick//2, lineType=cv2.LINE_AA)
+            
+            if class_ind == 0:
+                mask_counter = mask_counter + 1
+            else:
+                nomask_counter = nomask_counter + 1
+        
+    print(f'[INFO][core.utils.draw_bbox] There are {i + 1} people in this image.')
+    print(f'[INFO][core.utils.draw_bbox] {mask_counter} people wearing mask')
+    print(f'[INFO][core.utils.draw_bbox] {nomask_counter} people not wearing mask')
+
 
     
-    print(f'[DEBUG][core.utils.draw_bbox] There are {i + 1} people in this image.')
-    print(f'[DEBUG][core.utils.draw_bbox] score : {score}')
-    print(f'[DEBUG][core.utils.draw_bbox] class_ind : {class_ind}')
-
+    
     return image
 
 

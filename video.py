@@ -65,7 +65,7 @@ def main(argv):
         height = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(vid.get(cv2.CAP_PROP_FPS))
         print(f"[DEBUG][video] Video CODEC : {FLAGS.save_path.split('.')[1]}")
-        codec = cv2.VideoWriter_fourcc(*'XVID')
+        codec = cv2.VideoWriter_fourcc(*'MJPEG')
         out = cv2.VideoWriter(FLAGS.save_path, codec, fps, (width, height))
 
     while True:
