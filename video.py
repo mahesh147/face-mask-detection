@@ -56,7 +56,7 @@ def main(argv):
 
     toc = time.perf_counter()
     print(f'[INFO] Architecture built.')
-    print(f'[DEBUG][video] Execution took {toc - tic:0.4f} seconds')
+    print(f'[DEBUG][video] Execution took {(1000 * (toc - tic)):0.4f} ms')
 
     vid = cv2.VideoCapture(video_path)
 
@@ -86,7 +86,7 @@ def main(argv):
         image_data = utils.image_preprocess(
             np.copy(frame), [input_size, input_size])
         image_data = image_data[np.newaxis, ...].astype(np.float32)
-        prev_time = time.time()
+        prev_time = time.perf_counter()
 
         pred_bbox = model.predict(image_data)
         print(f'[INFO][video] Finished initial predication on image')
@@ -101,7 +101,7 @@ def main(argv):
 
         image = utils.draw_bbox(frame, bboxes)
 
-        curr_time = time.time()
+        curr_time = time.perf_counter() 
         exec_time = curr_time - prev_time
         result = np.asarray(image)
         info = "time: %.2f ms" % (1000*exec_time)

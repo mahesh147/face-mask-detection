@@ -12,7 +12,7 @@ flags.DEFINE_string('weights', None, 'name of weights file')
 flags.DEFINE_float('score_thresh', 0.25, 'prediction score threshold')
 flags.DEFINE_float('iou_thresh', 0.213, 'iou prediction score threshold')
 flags.DEFINE_integer('size', 416, 'input size to resize the image')
-
+flags.DEFINE_string('save_path', None, 'path to save the video')
 
 def main(argv):
     NUM_CLASS = 2
@@ -26,6 +26,7 @@ def main(argv):
     input_size = FLAGS.size
     score_thresh = FLAGS.score_thresh
     iou_thresh = FLAGS.iou_thresh
+    save_path = FLAGS.save_path
 
     print(f'[DEBUG][webcam] input_size : {input_size}')
     print(f'[DEBUG][webcam] score_thresh : {score_thresh}')
@@ -53,6 +54,14 @@ def main(argv):
     print(f'[DEBUG][webcam] Execution took {toc - tic:0.4f} seconds')
 
     vid = cv2.VideoCapture(0)
+
+    if save_path:
+        width = int(vid.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(vid.get(cv2.CAP_PROP_FPS))
+        print(f"[DEBUG][video] Video CODEC : {FLAGS.save_path.split('.')[1]}")
+        codec = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter(FLAGS.save_path, codec, fps, (width, height))
 
     while True:
         return_value, frame = vid.read()
@@ -93,9 +102,12 @@ def main(argv):
         result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         cv2.imshow("result", result)
         print(result.shape)
+        if save_path:
+            out.write(result)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     vid.release()
+    out.release()
 
 
 if __name__ == '__main__':

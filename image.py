@@ -13,7 +13,7 @@ flags.DEFINE_string('image_path', None, 'path to the image')
 flags.DEFINE_float('score_thresh', 0.25, 'prediction score threshold')
 flags.DEFINE_float('iou_thresh', 0.213, 'iou prediction score threshold')
 flags.DEFINE_integer('size', 416, 'input size to resize the image')
-
+flags.DEFINE_string('save_path', None, 'path to save the image')
 
 def main(argv):
     NUM_CLASS = 2
@@ -28,6 +28,7 @@ def main(argv):
     image_path = FLAGS.image_path
     score_thresh = FLAGS.score_thresh
     iou_thresh = FLAGS.iou_thresh
+    save_path = FLAGS.save_path
 
     print(f'[DEBUG][image] input_size : {input_size}')
     print(f'[DEBUG][image] image_path : {image_path}')
@@ -83,6 +84,9 @@ def main(argv):
 
     image.show()
 
+    if (save_path):
+        image.save(save_path)
+        print(f'[INFO][image] Detected image saved to {save_path}')
 
 if __name__ == '__main__':
     try:
